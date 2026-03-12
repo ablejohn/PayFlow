@@ -5,35 +5,30 @@ services:
     build: ./backend
     ports:
       - '3000:3000'
+    env_file:
+      - ./backend/.env        # All API env vars come from .env
     environment:
-      NODE_ENV: development
-      DATABASE_URL: postgresql://payflow:payflow@db:5432/payflow
-      JWT_SECRET: local_dev_secret_change_in_production
-      JWT_EXPIRES_IN: 7d
-      AWS_REGION: eu-north-1
-      AWS_BUCKET_NAME: payflow-dev
-      AWS_ACCESS_KEY_ID: test
-      AWS_SECRET_ACCESS_KEY: test
+      NODE_ENV: development   # Override only what's needed
     depends_on:
       db:
         condition: service_healthy
     volumes:
       - ./backend:/app
-      - /app/node_modules     # Prevent host node_modules overwriting container's
+      - /app/node_modules
 
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER:     payflow
-      POSTGRES_PASSWORD: payflow
-      POSTGRES_DB:       payflow
+      POSTGRES_USER:     ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB:       ${POSTGRES_DB}
     ports:
       - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./backend/db/migrations:/docker-entrypoint-initdb.d  # Auto-runs migrations
+      - ./backend/db/migrations:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U payflow']
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER}']
       interval: 5s
       timeout: 5s
       retries: 5
